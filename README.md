@@ -1,7 +1,7 @@
 # 🚀 ES Extended – Version 1.13.4 (Double Jobs)
 
-> **Modification personnalisée de es_extended** permettant la gestion de **deux métiers simultanés** :  
-> un **job principal** et un **job secondaire** (`job` + `job2`).
+**Modification personnalisée de es_extended** permettant la gestion de **deux métiers simultanés** :  
+ un **job principal** et un **job secondaire** (`job` + `job2`).
 
 ---
 
@@ -103,4 +103,4 @@ Si vous rencontrez un problème :
 - Ouvrez une issue sur ce dépôt.
 - Discord (en préparation) : lien bientôt disponible
 
-Readme formuler et mise en forme par IA
+Formuler et mise en forme par IA
