@@ -16,6 +16,12 @@ CREATE TABLE `users` (
 	`job_grade` INT NULL DEFAULT 0,
 	`job2` VARCHAR(20) NULL DEFAULT 'unemployed2',
 	`job2_grade` INT NULL DEFAULT 0,
+
+	`orga` VARCHAR(20) NULL DEFAULT 'unemployed2',
+	`orga_grade` INT NULL DEFAULT 0,
+	`gang` VARCHAR(20) NULL DEFAULT 'unemployed2',
+	`gang_grade` INT NULL DEFAULT 0,
+
 	`loadout` LONGTEXT NULL DEFAULT NULL,
 	`metadata` LONGTEXT NULL DEFAULT NULL,
 	`position` longtext NULL DEFAULT NULL,
@@ -67,3 +73,51 @@ CREATE TABLE `jobs` (
 ) ENGINE=InnoDB;
 
 INSERT INTO `jobs` VALUES ('unemployed','Unemployed');
+
+CREATE TABLE `orga_grades` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`orga_name` VARCHAR(50) DEFAULT NULL,
+	`grade` INT NOT NULL,
+	`name` VARCHAR(50) NOT NULL,
+	`label` VARCHAR(50) NOT NULL,
+	`salary` INT NOT NULL,
+	`skin_male` LONGTEXT NOT NULL,
+	`skin_female` LONGTEXT NOT NULL,
+
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `orga_grades` VALUES (1,'unemployed',0,'unemployed','Unemployed',200,'{}','{}');
+
+CREATE TABLE `orga` (
+	`name` VARCHAR(50) NOT NULL,
+	`label` VARCHAR(50) DEFAULT NULL,
+
+	PRIMARY KEY (`name`)
+) ENGINE=InnoDB;
+
+INSERT INTO `orga` VALUES ('unemployed','Unemployed');
+
+CREATE TABLE `gang_grades` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`gang_name` VARCHAR(50) DEFAULT NULL,
+	`grade` INT NOT NULL,
+	`name` VARCHAR(50) NOT NULL,
+	`label` VARCHAR(50) NOT NULL,
+	`salary` INT NOT NULL,
+	`skin_male` LONGTEXT NOT NULL,
+	`skin_female` LONGTEXT NOT NULL,
+
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `gang_grades` VALUES (1,'unemployed',0,'unemployed','Unemployed',200,'{}','{}');
+
+CREATE TABLE `gang` (
+	`name` VARCHAR(50) NOT NULL,
+	`label` VARCHAR(50) DEFAULT NULL,
+
+	PRIMARY KEY (`name`)
+) ENGINE=InnoDB;
+
+INSERT INTO `gang` VALUES ('unemployed','Unemployed');

@@ -213,15 +213,16 @@ function Core.SavePlayer(xPlayer, cb)
 
     updateHealthAndArmorInMetadata(xPlayer)
 
-    local job2Name = xPlayer.job2 and xPlayer.job2.name or "unemployed2"
-    local job2Grade = xPlayer.job2 and xPlayer.job2.grade or 0
-
     local parameters <const> = {
         json.encode(xPlayer.getAccounts(true)),
         xPlayer.job.name,
         xPlayer.job.grade,
-        job2Name,
-        job2Grade,
+        xPlayer.job2.name,
+        xPlayer.job2.grade,
+        xPlayer.orga.name,
+        xPlayer.orga.grade,
+        xPlayer.gang.name,
+        xPlayer.gang.grade,
         xPlayer.group,
         json.encode(xPlayer.getCoords(false, true)),
         json.encode(xPlayer.getInventory(true)),
@@ -231,7 +232,7 @@ function Core.SavePlayer(xPlayer, cb)
     }
 
     MySQL.prepare(
-        "UPDATE `users` SET `accounts` = ?, `job` = ?, `job_grade` = ?, `job2` = ?, `job2_grade` = ?, `group` = ?, `position` = ?, `inventory` = ?, `loadout` = ?, `metadata` = ? WHERE `identifier` = ?",
+        "UPDATE `users` SET `accounts` = ?, `job` = ?, `job_grade` = ?, `job2` = ?, `job2_grade` = ?, `orga` = ?, `orga_grade` = ?, `gang` = ?, `gang_grade` = ?, `group` = ?, `position` = ?, `inventory` = ?, `loadout` = ?, `metadata` = ? WHERE `identifier` = ?",
         parameters,
         function(affectedRows)
             if affectedRows == 1 then
@@ -259,15 +260,16 @@ function Core.SavePlayers(cb)
     for _, xPlayer in pairs(ESX.Players) do
         updateHealthAndArmorInMetadata(xPlayer)
 
-        local job2Name = xPlayer.job2 and xPlayer.job2.name or "unemployed2"
-        local job2Grade = xPlayer.job2 and xPlayer.job2.grade or 0
-
         parameters[#parameters + 1] = {
             json.encode(xPlayer.getAccounts(true)),
             xPlayer.job.name,
             xPlayer.job.grade,
-            job2Name,
-            job2Grade,
+            xPlayer.job2.name,
+            xPlayer.job2.grade,
+            xPlayer.orga.name,
+            xPlayer.orga.grade,
+            xPlayer.gang.name,
+            xPlayer.gang.grade,
             xPlayer.group,
             json.encode(xPlayer.getCoords(false, true)),
             json.encode(xPlayer.getInventory(true)),
@@ -278,7 +280,7 @@ function Core.SavePlayers(cb)
     end
 
     MySQL.prepare(
-        "UPDATE `users` SET `accounts` = ?, `job` = ?, `job_grade` = ?, `job2` = ?, `job2_grade` = ?, `group` = ?, `position` = ?, `inventory` = ?, `loadout` = ?, `metadata` = ? WHERE `identifier` = ?",
+        "UPDATE `users` SET `accounts` = ?, `job` = ?, `job_grade` = ?, `job2` = ?, `job2_grade` = ?, `orga` = ?, `orga_grade` = ?, `gang` = ?, `gang_grade` = ?, `group` = ?, `position` = ?, `inventory` = ?, `loadout` = ?, `metadata` = ? WHERE `identifier` = ?",
         parameters,
         function(results)
             if not results then
@@ -573,7 +575,6 @@ function ESX.RefreshJobs()
     end
 
     if not Jobs then
-        -- Fallback data, if no jobs exist
         ESX.Jobs["unemployed"] = { name = "unemployed", label = "Unemployed", whitelisted = false, grades = { ["0"] = { grade = 0, name = "unemployed", label = "Unemployed", salary = 200, skin_male = {}, skin_female = {} } } }
     else
         ESX.Jobs = Jobs
@@ -581,6 +582,82 @@ function ESX.RefreshJobs()
 
     TriggerEvent("esx:jobsRefreshed")
     Core.JobsLoaded = true
+end
+
+function ESX.RefreshOrga()
+    Core.OrgaLoaded = false
+
+    local Orga = {}
+    local orga = MySQL.query.await("SELECT * FROM orga")
+
+    for _, v in ipairs(orga) do
+        Orga[v.name] = v
+        Orga[v.name].grades = {}
+    end
+
+    local orgaGrades = MySQL.query.await("SELECT * FROM orga_grades")
+
+    for _, v in ipairs(orgaGrades) do
+        if Orga[v.orga_name] then
+            Orga[v.orga_name].grades[tostring(v.grade)] = v
+        else
+            print(('[^3WARNING^7] Ignoring orga grades for ^5"%s"^0 due to missing orga'):format(v.orga_name))
+        end
+    end
+
+    for _, v in pairs(Orga) do
+        if ESX.Table.SizeOf(v.grades) == 0 then
+            Orga[v.name] = nil
+            print(('[^3WARNING^7] Ignoring orga ^5"%s"^0 due to no orga grades found'):format(v.name))
+        end
+    end
+
+    if not Orga then
+        ESX.Orga["unemployed"] = { name = "unemployed", label = "Unemployed", whitelisted = false, grades = { ["0"] = { grade = 0, name = "unemployed", label = "Unemployed", salary = 0, skin_male = {}, skin_female = {} } } }
+    else
+        ESX.Orga = Orga
+    end
+
+    TriggerEvent("esx:orgaRefreshed")
+    Core.OrgaLoaded = true
+end
+
+function ESX.RefreshGang()
+    Core.GangLoaded = false
+
+    local Gang = {}
+    local gang = MySQL.query.await("SELECT * FROM gang")
+
+    for _, v in ipairs(gang) do
+        Gang[v.name] = v
+        Gang[v.name].grades = {}
+    end
+
+    local orgaGrades = MySQL.query.await("SELECT * FROM gang_grades")
+
+    for _, v in ipairs(orgaGrades) do
+        if Gang[v.gang_name] then
+            Gang[v.gang_name].grades[tostring(v.grade)] = v
+        else
+            print(('[^3WARNING^7] Ignoring gang grades for ^5"%s"^0 due to missing gang'):format(v.gang_name))
+        end
+    end
+
+    for _, v in pairs(Gang) do
+        if ESX.Table.SizeOf(v.grades) == 0 then
+            Gang[v.name] = nil
+            print(('[^3WARNING^7] Ignoring gang ^5"%s"^0 due to no gang grades found'):format(v.name))
+        end
+    end
+
+    if not Gang then
+        ESX.Gang["unemployed"] = { name = "unemployed", label = "Unemployed", whitelisted = false, grades = { ["0"] = { grade = 0, name = "unemployed", label = "Unemployed", salary = 0, skin_male = {}, skin_female = {} } } }
+    else
+        ESX.Gang = Gang
+    end
+
+    TriggerEvent("esx:gangRefreshed")
+    Core.GangLoaded = true
 end
 
 ---@param item string
@@ -647,6 +724,22 @@ function ESX.GetJobs()
     end
 
     return ESX.Jobs
+end
+
+function ESX.GetOrga()
+    while not Core.OrgaLoaded do
+        Citizen.Wait(200)
+    end
+
+    return ESX.Orga
+end
+
+function ESX.GetGang()
+    while not Core.GangLoaded do
+        Citizen.Wait(200)
+    end
+
+    return ESX.Gang
 end
 
 ---@return table
@@ -812,6 +905,8 @@ if not Config.CustomInventory then
 end
 
 ---@param job string
+---@param orga string
+---@param gang string
 ---@param grade string
 ---@return boolean
 function ESX.DoesJobExist(job, grade)
@@ -820,6 +915,22 @@ function ESX.DoesJobExist(job, grade)
     end
 
     return (ESX.Jobs[job] and ESX.Jobs[job].grades[tostring(grade)] ~= nil) or false
+end
+
+function ESX.DoesOrgaExist(orga, grade)
+    while not Core.OrgaLoaded do
+        Citizen.Wait(200)
+    end
+
+    return (ESX.Orga[orga] and ESX.Orga[orga].grades[tostring(grade)] ~= nil) or false
+end
+
+function ESX.DoesGangExist(gang, grade)
+    while not Core.GangLoaded do
+        Citizen.Wait(200)
+    end
+
+    return (ESX.Gang[gang] and ESX.Gang[gang].grades[tostring(grade)] ~= nil) or false
 end
 
 ---@param playerSrc number

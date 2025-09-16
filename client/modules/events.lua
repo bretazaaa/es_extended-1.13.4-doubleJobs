@@ -10,6 +10,12 @@ RegisterNetEvent("esx:playerLoaded", function(xPlayer, _, skin)
     -- Synchronisation de job2
     ESX.PlayerData.job2 = xPlayer.job2 or { name = "unemployed", grade = 0, label = "Unemployed", grade_label = "Unemployed" }
 
+    -- Synchronisation de organisation
+    ESX.PlayerData.orga = xPlayer.orga or { name = "unemployed", grade = 0, label = "Unemployed", grade_label = "Unemployed" }
+
+    -- Synchronisation de gang
+    ESX.PlayerData.gang = xPlayer.gang or { name = "unemployed", grade = 0, label = "Unemployed", grade_label = "Unemployed" }
+
     if not Config.Multichar then
         ESX.SpawnPlayer(skin, ESX.PlayerData.coords, function()
             TriggerEvent("esx:onPlayerSpawn")
@@ -251,6 +257,14 @@ end)
 
 ESX.SecureNetEvent("esx:setJob2", function(Job2)
     ESX.SetPlayerData("job2", Job2)
+end)
+
+ESX.SecureNetEvent("esx:setOrga", function(Orga)
+    ESX.SetPlayerData("orga", Orga)
+end)
+
+ESX.SecureNetEvent("esx:setGang", function(Gang)
+    ESX.SetPlayerData("gang", Gang)
 end)
 
 ESX.SecureNetEvent("esx:setGroup", function(group)

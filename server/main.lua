@@ -3,7 +3,7 @@ SetGameType("ESX Legacy")
 
 local oneSyncState = GetConvar("onesync", "off")
 local newPlayer = "INSERT INTO `users` SET `accounts` = ?, `identifier` = ?, `ssn` = ?, `group` = ?"
-local loadPlayer = "SELECT `accounts`, `ssn`, `job`, `job_grade`, `job2`, `job2_grade`, `group`, `position`, `inventory`, `skin`, `loadout`, `metadata`"
+local loadPlayer = "SELECT `accounts`, `ssn`, `job`, `job_grade`, `job2`, `job2_grade`, `orga`, `orga_grade`, `gang`, `gang_grade`, `group`, `position`, `inventory`, `skin`, `loadout`, `metadata`"
 
 if Config.Multichar then
     newPlayer = newPlayer .. ", `firstname` = ?, `lastname` = ?, `dateofbirth` = ?, `sex` = ?, `height` = ?"
@@ -88,11 +88,24 @@ local function onPlayerDropped(playerId, reason, cb)
 
     TriggerEvent("esx:playerDropped", playerId, reason)
     local job = xPlayer.getJob().name
+    local orga = xPlayer.getOrga().name
+    local gang = xPlayer.getGang().name
     local currentJob = Core.JobsPlayerCount[job]
+    local currentOrga = Core.OrgaPlayerCount[orga]
+    local currentGang = Core.GangPlayerCount[gang]
     Core.JobsPlayerCount[job] = ((currentJob and currentJob > 0) and currentJob or 1) - 1
+    Core.OrgaPlayerCount[orga] = ((currentOrga and currentOrga > 0) and currentOrga or 1) - 1
+    Core.GangPlayerCount[gang] = ((currentGang and currentGang > 0) and currentGang or 1) - 1
 
-    GlobalState[("%s:count"):format(job)] = Core.JobsPlayerCount[job]
-
+    if job then
+        GlobalState[("%s:count"):format(job)] = Core.JobsPlayerCount[job]
+    end
+    if orga then
+        GlobalState[("orga:%s:count"):format(orga)] = Core.OrgaPlayerCount[orga]
+    end
+    if gang then
+        GlobalState[("gang:%s:count"):format(gang)] = Core.GangPlayerCount[gang]
+    end
     Core.SavePlayer(xPlayer, function()
         GlobalState["playerCount"] = GlobalState["playerCount"] - 1
         ESX.Players[playerId] = nil
@@ -110,7 +123,7 @@ AddEventHandler("esx:onPlayerDropped", onPlayerDropped)
 
 if Config.Multichar then
     AddEventHandler("esx:onPlayerJoined", function(src, char, data)
-        while not next(ESX.Jobs) do
+        while not next(ESX.Jobs) and not next(ESX.Orga) and not next(ESX.Gang) do
             Wait(50)
         end
 
@@ -126,7 +139,7 @@ if Config.Multichar then
 else
     RegisterNetEvent("esx:onPlayerJoined", function()
         local _source = source
-        while not next(ESX.Jobs) do
+        while not next(ESX.Jobs) and not next(ESX.Orga) and not next(ESX.Gang) do
             Wait(50)
         end
 
@@ -269,6 +282,56 @@ function loadESXPlayer(identifier, playerId, isNew)
         skin_female = grade2Object.skin_female and json.decode(grade2Object.skin_female) or {},
     }
 
+    -- Orga
+    local orga = (result.orga and result.orga ~= "") and result.orga or "unemployed2"
+    local gradeOrga = (result.orga_grade and result.orga_grade ~= 0) and tostring(result.orga_grade) or "0"
+
+    if not ESX.DoesOrgaExist(orga, gradeOrga) then
+        print(("[^3WARNING^7] Ignoring invalid orga for ^5%s^7 [orga: ^5%s^7, grade: ^5%s^7]"):format(identifier, orga, gradeOrga))
+        orga, gradeOrga = "unemployed", "0"
+    end
+
+    local orgaObject, gradeOrgaObject = ESX.Orga[orga], ESX.Orga[orga].grades[gradeOrga]
+
+    userData.orga = {
+        id = orgaObject.id,
+        name = orgaObject.name,
+        label = orgaObject.label,
+
+        grade = tonumber(gradeOrga),
+        grade_name = gradeOrgaObject.name,
+        grade_label = gradeOrgaObject.label,
+        grade_salary = gradeOrgaObject.salary,
+
+        skin_male = gradeOrgaObject.skin_male and json.decode(gradeOrgaObject.skin_male) or {},
+        skin_female = gradeOrgaObject.skin_female and json.decode(gradeOrgaObject.skin_female) or {},
+    }
+
+    -- Gang
+    local gang = (result.gang and result.gang ~= "") and result.gang or "unemployed2"
+    local gradeGang = (result.gang_grade and result.gang_grade ~= 0) and tostring(result.gang_grade) or "0"
+
+    if not ESX.DoesGangExist(gang, gradeGang) then
+        print(("[^3WARNING^7] Ignoring invalid gang for ^5%s^7 [gang: ^5%s^7, grade: ^5%s^7]"):format(identifier, gang, gradeGang))
+        gang, gradeGang = "unemployed", "0"
+    end
+
+    local gangObject, gradeGangObject = ESX.Gang[gang], ESX.Gang[gang].grades[gradeGang]
+
+    userData.gang = {
+        id = gangObject.id,
+        name = gangObject.name,
+        label = gangObject.label,
+
+        grade = tonumber(gradeGang),
+        grade_name = gradeGangObject.name,
+        grade_label = gradeGangObject.label,
+        grade_salary = gradeGangObject.salary,
+
+        skin_male = gradeGangObject.skin_male and json.decode(gradeGangObject.skin_male) or {},
+        skin_female = gradeGangObject.skin_female and json.decode(gradeGangObject.skin_female) or {},
+    }
+
     -- Inventory
     if not Config.CustomInventory then
         local inventory = (result.inventory and result.inventory ~= "") and json.decode(result.inventory) or {}
@@ -337,7 +400,7 @@ function loadESXPlayer(identifier, playerId, isNew)
     userData.metadata = (result.metadata and result.metadata ~= "") and json.decode(result.metadata) or {}
 
     -- xPlayer Creation
-    local xPlayer = CreateExtendedPlayer(playerId, identifier, userData.ssn, userData.group, userData.accounts, userData.inventory, userData.weight, userData.job, userData.job2, userData.loadout, GetPlayerName(playerId), userData.coords, userData.metadata)
+    local xPlayer = CreateExtendedPlayer(playerId, identifier, userData.ssn, userData.group, userData.accounts, userData.inventory, userData.weight, userData.job, userData.job2, userData.orga, userData.gang, userData.loadout, GetPlayerName(playerId), userData.coords, userData.metadata)
 
     GlobalState["playerCount"] = GlobalState["playerCount"] + 1
     ESX.Players[playerId] = xPlayer
@@ -406,12 +469,26 @@ AddEventHandler("esx:playerLoaded", function(_, xPlayer, isNew)
     Core.JobsPlayerCount[job] = (Core.JobsPlayerCount[job] or 0) + 1
     GlobalState[jobKey] = Core.JobsPlayerCount[job]
 
-        if xPlayer.job2 and xPlayer.job2.name and Core.JobsPlayerCount[xPlayer.job2.name] then
-            local job2 = xPlayer.job2.name
-            local currentJob2 = Core.JobsPlayerCount[job2]
-            Core.JobsPlayerCount[job2] = ((currentJob2 and currentJob2 > 0) and currentJob2 or 1) - 1
-            GlobalState[("%s:count"):format(job2)] = Core.JobsPlayerCount[job2]
-        end
+    if xPlayer.job2 and xPlayer.job2.name then
+        local job2 = xPlayer.job2.name
+        Core.JobsPlayerCount[job2] = (Core.JobsPlayerCount[job2] or 0) + 1
+        GlobalState[("%s:count"):format(job2)] = Core.JobsPlayerCount[job2]
+    end
+
+    -- Orga
+    if xPlayer.orga and xPlayer.orga.name then
+        local orga = xPlayer.orga.name
+        Core.OrgaPlayerCount = Core.OrgaPlayerCount or {}
+        Core.OrgaPlayerCount[orga] = (Core.OrgaPlayerCount[orga] or 0) + 1
+        GlobalState[("orga:%s:count"):format(orga)] = Core.OrgaPlayerCount[orga]
+    end
+    -- Gang
+    if xPlayer.gang and xPlayer.gang.name then
+        local gang = xPlayer.gang.name
+        Core.GangPlayerCount = Core.GangPlayerCount or {}
+        Core.GangPlayerCount[gang] = (Core.GangPlayerCount[gang] or 0) + 1
+        GlobalState[("gang:%s:count"):format(gang)] = Core.GangPlayerCount[gang]
+    end
     
     if isNew then
         Player(xPlayer.source).state:set('isNew', true, false)
@@ -435,6 +512,22 @@ RegisterNetEvent("esx:setJob2", function(job2)
     if xPlayer then
         xPlayer.job2 = job2
         TriggerClientEvent("esx:setJob2", xPlayer.source, job2)
+    end
+end)
+
+RegisterNetEvent("esx:setOrga", function(orga)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if xPlayer then
+        xPlayer.orga = orga
+        TriggerClientEvent("esx:setOrga", xPlayer.source, orga)
+    end
+end)
+
+RegisterNetEvent("esx:setGang", function(gang)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if xPlayer then
+        xPlayer.gang = gang
+        TriggerClientEvent("esx:setGang", xPlayer.source, gang)
     end
 end)
 
@@ -714,6 +807,9 @@ ESX.RegisterServerCallback("esx:getPlayerData", function(source, cb)
         accounts = xPlayer.getAccounts(),
         inventory = xPlayer.getInventory(),
         job = xPlayer.getJob(),
+        job2 = xPlayer.getJob2(),
+        orga = xPlayer.getOrga(),
+        gang = xPlayer.getGang(),
         loadout = xPlayer.getLoadout(),
         money = xPlayer.getMoney(),
         position = xPlayer.getCoords(true),
@@ -741,6 +837,8 @@ ESX.RegisterServerCallback("esx:getOtherPlayerData", function(_, cb, target)
         accounts = xPlayer.getAccounts(),
         inventory = xPlayer.getInventory(),
         job = xPlayer.getJob(),
+        orga = xPlayer.getOrga(),
+        gang = xPlayer.getGang(),
         loadout = xPlayer.getLoadout(),
         money = xPlayer.getMoney(),
         position = xPlayer.getCoords(true),

@@ -148,7 +148,7 @@
 ---@param coords vector4|{x: number, y: number, z: number, heading: number}
 ---@param metadata table
 ---@return xPlayer
-function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, inventory, weight, job, job2, loadout, name, coords, metadata)
+function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, inventory, weight, job, job2, orga, gang, loadout, name, coords, metadata)
     ---@diagnostic disable-next-line: missing-fields
     local self = {} ---@type xPlayer
 
@@ -160,6 +160,8 @@ function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, invent
     self.inventory = inventory
     self.job = job
     self.job2 = job2
+    self.orga = orga or { name = 'unemployed', label = 'Unemployed', grade = 0 }
+    self.gang = gang or { name = 'unemployed', label = 'Unemployed', grade = 0 }
     self.loadout = loadout
     self.name = name
     self.playerId = playerId
@@ -349,6 +351,14 @@ function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, invent
 
     function self.getJob2()
         return self.job2
+    end
+
+    function self.getOrga()
+        return self.orga
+    end
+
+    function self.getGang()
+        return self.gang
     end
 
     function self.getLoadout(minimal)
@@ -608,7 +618,7 @@ function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, invent
         Player(self.source).state:set("job", self.job, true)
     end
 
-        function self.setJob2(newJob, grade)
+    function self.setJob2(newJob, grade)
         grade = tostring(grade)
         local lastJob2 = self.Job2
 
@@ -635,6 +645,64 @@ function CreateExtendedPlayer(playerId, identifier, ssn, group, accounts, invent
 
         TriggerEvent("esx:setJob2", self.source, self.job2, lastJob2)
         self.triggerEvent("esx:setJob2", self.job2, lastJob2)
+    end
+
+    function self.setOrga(newOrga, grade)
+        grade = tostring(grade)
+        local lastOrga = self.Orga
+
+        if not ESX.DoesOrgaExist(newOrga, grade) then
+            return print(("[ESX] [^3WARNING^7] Ignoring invalid ^5.setOrga 2()^7 usage for ID: ^5%s^7, Job 2: ^5%s^7"):format(self.source, newOrga))
+        end
+
+        local orgaObject, gradeOrgaObject = ESX.Orga[newOrga], ESX.Orga[newOrga].grades[grade]
+
+        self.orga = {
+            id = orgaObject.id,
+            name = orgaObject.name,
+            label = orgaObject.label,
+            onDuty = onDuty,
+
+            grade = tonumber(grade) or 0,
+            grade_name = gradeOrgaObject.name,
+            grade_label = gradeOrgaObject.label,
+            grade_salary = gradeOrgaObject.salary,
+
+            skin_male = gradeOrgaObject.skin_male and json.decode(gradeOrgaObject.skin_male) or {},
+            skin_female = gradeOrgaObject.skin_female and json.decode(gradeOrgaObject.skin_female) or {},
+        }
+
+        TriggerEvent("esx:setOrga", self.source, self.orga, lastOrga)
+        self.triggerEvent("esx:setOrga", self.orga, lastOrga)
+    end
+
+    function self.setGang(newGang, grade)
+        grade = tostring(grade)
+        local lastGang = self.Gang
+
+        if not ESX.DoesGangExist(newGang, grade) then
+            return print(("[ESX] [^3WARNING^7] Ignoring invalid ^5.setGang 2()^7 usage for ID: ^5%s^7, Job 2: ^5%s^7"):format(self.source, newGang))
+        end
+
+        local gangObject, gradeGangObject = ESX.Gang[newGang], ESX.Gang[newGang].grades[grade]
+
+        self.gang = {
+            id = gangObject.id,
+            name = gangObject.name,
+            label = gangObject.label,
+            onDuty = onDuty,
+
+            grade = tonumber(grade) or 0,
+            grade_name = gradeGangObject.name,
+            grade_label = gradeGangObject.label,
+            grade_salary = gradeGangObject.salary,
+
+            skin_male = gradeGangObject.skin_male and json.decode(gradeGangObject.skin_male) or {},
+            skin_female = gradeGangObject.skin_female and json.decode(gradeGangObject.skin_female) or {},
+        }
+
+        TriggerEvent("esx:setGang", self.source, self.gang, lastGang)
+        self.triggerEvent("esx:setGang", self.gang, lastGang)
     end
 
     function self.addWeapon(weaponName, ammo)

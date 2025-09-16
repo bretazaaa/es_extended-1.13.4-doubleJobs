@@ -1,8 +1,12 @@
 ESX.Players = {}
 ESX.Jobs = {}
+ESX.Orga = {}
+ESX.Gang = {}
 ESX.Items = {}
 Core = {}
 Core.JobsPlayerCount = {}
+Core.OrgaPlayerCount = {}
+Core.GangPlayerCount = {}
 Core.UsableItemsCallbacks = {}
 Core.RegisteredCommands = {}
 Core.Pickups = {}
@@ -11,6 +15,8 @@ Core.PlayerFunctionOverrides = {}
 Core.DatabaseConnected = false
 Core.playersByIdentifier = {}
 Core.JobsLoaded = false
+Core.OrgaLoaded = false
+Core.GangLoaded = false
 
 ---@type table<string, CVehicleData>
 Core.vehicles = {}
@@ -43,6 +49,8 @@ MySQL.ready(function()
     end
 
     ESX.RefreshJobs()
+    ESX.RefreshOrga()
+    ESX.RefreshGang()
 
     print(("[^2INFO^7] ESX ^5Legacy %s^0 initialized!"):format(GetResourceMetadata(GetCurrentResourceName(), "version", 0)))
 

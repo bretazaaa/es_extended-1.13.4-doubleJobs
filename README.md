@@ -1,7 +1,10 @@
-# 🚀 ES Extended – Version 1.13.4 (Double Jobs)
+# 🚀 ES Extended – Version 1.13.4 (Double Jobs, Orga & Gang)
 
-**Modification personnalisée de es_extended** permettant la gestion de **deux métiers simultanés** :  
- un **job principal** et un **job secondaire** (`job` + `job2`).
+**Modification avancée de es_extended** permettant la gestion de :
+
+- **Deux métiers simultanés** : job principal (`job`) et job secondaire (`job2`)
+- **Organisation** (`orga`)
+- **Gang** (`gang`)
 
 ---
 
@@ -9,98 +12,94 @@
 
 ### Core ESX
 
-Téléchargez le core complet ici :  
+Téléchargez le core complet ici :  
 👉 [GitHub ESX Core](https://github.com/esx-framework/esx_core)
 
 ### Installation d’un serveur FiveM
 
-Suivez la documentation officielle :  
+Suivez la documentation officielle :  
 👉 [Docs FiveM](https://docs.fivem.net/docs/server-manual/setting-up-a-server/)
 
 ---
 
-## 🔧 Modifications incluses
+## 🔧 Fonctionnalités et modifications
 
-- Passage en **double jobs** (`job` + `job2`) dans la base de données et le framework.
-- Nouvelles **commandes administrateur** pour définir ou consulter le second métier.
-- Support complet côté client/serveur pour gérer deux métiers séparés.
+- Gestion complète de **deux jobs** (principal et secondaire) dans la base de données et le framework.
+- Ajout de la gestion **organisation** et **gang** (stockés dans la base et accessibles côté framework).
+- Nouvelles **commandes administrateur** pour définir ou consulter le job secondaire, l’organisation ou le gang.
+- Support complet côté client/serveur pour tous ces rôles.
+- Système rétrocompatible avec les scripts ESX existants.
 
 ---
 
-## 🕹️ Utilisation
+## 🕹️ Commandes administrateur
 
-### Commandes Admin
-
-- **Changer le job principal** :
-  ```bash
+- **Définir le job principal** :
+  ```
   /setjob [playerId] [job] [grade]
   ```
-- **Changer le job secondaire** :
-  ```bash
+- **Définir le job secondaire** :
+  ```
   /setjob2 [playerId] [job] [grade]
   ```
-- **Informations sur le job principal** :
-  ```bash
-  /job
+- **Définir l’organisation** :
   ```
-- **Informations sur le job secondaire** :
-  ```bash
-  /job2
+  /setorga [playerId] [orga] [grade]
+  ```
+- **Définir le gang** :
+  ```
+  /setgang [playerId] [gang] [grade]
   ```
 
 ---
 
 ## 🗄️ Mise à jour de la base de données
 
-Si vous avez déjà un serveur en place, exécutez ces requêtes SQL :
+Si vous migrez depuis une version antérieure, exécutez :
 
 ```sql
 ALTER TABLE users ADD COLUMN job2 VARCHAR(50) DEFAULT 'unemployed';
 ALTER TABLE users ADD COLUMN job2_grade INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN orga VARCHAR(50) DEFAULT 'unemployed';
+ALTER TABLE users ADD COLUMN orga_grade INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN gang VARCHAR(50) DEFAULT 'unemployed';
+ALTER TABLE users ADD COLUMN gang_grade INT DEFAULT 0;
 ```
 
-⚠️ Vous n’avez besoin que des tables jobs et job_grades (pas de jobs2 ni job2_grades).
-Les deux jobs utiliseront la même structure de référence.
+⚠️ Seules ces colonnes sont nécessaires dans la table `users`.
+Les jobs utilisent la même structure de référence ; organisation et gang disposent de leurs propres tables pour plus de clarté (voir `es_extended.sql`).
 
 ---
 
-## 📌 Bonnes pratiques & Astuces
+## 📌 Bonnes pratiques & astuces
 
-- Vérifiez que chaque job secondaire que vous souhaitez utiliser existe bien dans la table jobs et possède ses job_grades.
-- Le système est rétrocompatible avec vos scripts ESX existants :
+- Vérifiez que chaque job secondaire, organisation ou gang existe bien dans les tables correspondantes et possède ses grades.
+- Le système reste compatible avec vos scripts ESX :
+  - `xPlayer.job` → job principal
+  - `xPlayer.job2` → job secondaire
+  - `xPlayer.orga` → organisation
+  - `xPlayer.gang` → gang
+- Vous pouvez conditionner vos scripts sur n’importe lequel de ces rôles, par exemple :
 
-```bash
-xPlayer.job → job principal
-```
-
-```bash
-xPlayer.job2 → job secondaire
-```
-
-- Vous pouvez conditionner certains scripts pour vérifier si le joueur a l’un ou l’autre job.
-- Exemple côté serveur :
-
-```lua
-if xPlayer.job.name == "police" or xPlayer.job2.name == "police" then
-    -- Le joueur est policier (même si c'est en secondaire)
-end
-```
+  ```lua
+  if xPlayer.job.name == "police" or xPlayer.job2.name == "police" or xPlayer.gang.name == "ballas" or xPlayer.orga.name == "lostmc" then
+      -- Le joueur est policier, dans le gang ballas ou l’orga lostmc
+  end
+  ```
 
 ---
 
 ## ⚙️ Compatibilité
 
 - Compatible avec ESX Legacy (≥ 1.9) et ESX 1.13.4.
-- Compatible avec `esx_society`, `esx_billing`, `esx_policejob`, etc.
-- Peut nécessiter une adaptation légère des scripts vérifiant uniquement `xPlayer.job`.
+- Fonctionne avec `esx_society`, `esx_billing`, `esx_policejob`, etc.
+- Une légère adaptation peut être nécessaire pour les scripts qui ne vérifient que `xPlayer.job`, `xPlayer.orga` ou `xPlayer.gang`.
 
 ---
 
 ## 🐛 Support
 
-Si vous rencontrez un problème :
+En cas de problème :
 
 - Ouvrez une issue sur ce dépôt.
-- Discord (en préparation) : lien bientôt disponible
-
-Formuler et mise en forme par IA
+- Discord (en préparation) : lien à venir.
